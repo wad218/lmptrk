@@ -3,6 +3,7 @@
 
     var connect_host = '{localhost}';
     var list_opened = false;
+    var metainfo_rendered = false;
 
     function reguest(params, callback) {
       if (params.ffprobe && params.path.split('.').pop() !== 'mp4') {
@@ -270,7 +271,7 @@
 
     function parseMetainfo(data) {
   var loading = Lampa.Template.get('tracks_loading');
-  data.item.after(loading);
+  $('.torrent-files').after(loading);
 
   // беремо перший файл у списку (перша серія)
   var first = data.items[0];
@@ -371,7 +372,7 @@
           loading.remove();
 
           if (video.length || audio.length || subs.length) {
-            data.item.after(html);
+            $('.torrent-files').after(html);
           }
 
           if (Lampa.Controller.enabled().name == 'modal') Lampa.Controller.toggle('modal');
@@ -384,11 +385,16 @@
     });
     Lampa.Listener.follow('torrent_file', function (data) {
       if (data.type == 'list_open') list_opened = true;
-      if (data.type == 'list_close') list_opened = false;
+      if (data.type == 'list_close') {
+    list_opened = false;
+    metainfo_rendered = false;
+}
 
-      if (data.type == 'render' && list_opened && data.items.length) {
+      if (data.type == 'render' && list_opened && data.items.length && !metainfo_rendered) {
+    metainfo_rendered = true;
     parseMetainfo(data);
 }
+
     });
     Lampa.Template.add('tracks_loading', "\n    <div class=\"tracks-loading\">\n        <span>#{loading}...</span>\n    </div>\n");
     Lampa.Template.add('tracks_metainfo', "\n    <div class=\"tracks-metainfo\"></div>\n");
