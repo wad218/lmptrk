@@ -269,9 +269,15 @@
     }
 
     function parseMetainfo(data) {
-      var loading = Lampa.Template.get('tracks_loading');
-      data.item.after(loading);
-      reguest(data.element, function (result) {
+  var loading = Lampa.Template.get('tracks_loading');
+  data.item.after(loading);
+
+  // беремо перший файл у списку (перша серія)
+  var first = data.items[0];
+
+  if (!first) return;
+
+  reguest(first, function (result) {
         if (list_opened) {
           var append = function append(name, fields) {
             if (fields.length) {
@@ -380,9 +386,9 @@
       if (data.type == 'list_open') list_opened = true;
       if (data.type == 'list_close') list_opened = false;
 
-      if (data.type == 'render' && data.items.length == 1 && list_opened) {
-        parseMetainfo(data);
-      }
+      if (data.type == 'render' && list_opened && data.items.length) {
+    parseMetainfo(data);
+}
     });
     Lampa.Template.add('tracks_loading', "\n    <div class=\"tracks-loading\">\n        <span>#{loading}...</span>\n    </div>\n");
     Lampa.Template.add('tracks_metainfo', "\n    <div class=\"tracks-metainfo\"></div>\n");
