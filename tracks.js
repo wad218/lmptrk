@@ -317,6 +317,29 @@
           codec_video.slice(0, 1).forEach(function (v) {
             var line = {};
             if (v.width && v.height) line.video = v.width + 'х' + v.height;
+              
+// ===== FPS START =====
+var fps;
+
+if (v.avg_frame_rate && v.avg_frame_rate.indexOf('/') > -1) {
+    var parts = v.avg_frame_rate.split('/');
+    fps = parseFloat(parts[0]) / parseFloat(parts[1]);
+}
+else if (v.r_frame_rate && v.r_frame_rate.indexOf('/') > -1) {
+    var parts = v.r_frame_rate.split('/');
+    fps = parseFloat(parts[0]) / parseFloat(parts[1]);
+}
+
+if (fps && fps > 0) {
+    var fpsRounded = Math.round(fps * 1000) / 1000;
+
+    fpsRounded = fpsRounded.toString()
+        .replace(/\.0+$/, '')
+        .replace(/(\.\d*[1-9])0+$/, '$1');
+
+    line.fps = fpsRounded + ' fps';
+}
+// ===== FPS END =====
 
             if (v.duration) {
               line.duration = new Date(v.duration * 1000).toISOString().slice(11, 19);
