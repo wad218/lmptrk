@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var connect_host = '{localhost}';
+    var connect_host = '34.89.223.87:8090';
     var list_opened = false;
     var metainfo_rendered = false;
 
@@ -14,18 +14,14 @@
     }, 200);
   } else {
 
-    if (connect_host == '{localhost}')
-        connect_host = '185.204.0.61';
-
     var attempts = 0;
     var maxAttempts = 5;
 
     function tryRequest() {
 
       var socket = new WebSocket(
-        'ws://' + connect_host + ':8080/?' +
-        params.torrent_hash + '&index=' + params.id
-      );
+  'ws://' + connect_host + '/?hash=' + params.torrent_hash + '&index=' + params.id
+);
 
       socket.addEventListener('message', function (event) {
 
