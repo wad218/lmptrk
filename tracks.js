@@ -23,11 +23,17 @@
             json = JSON.parse(event.data);
           } catch (e) {}
 
-          if (json.streams) callback(json);
+          if (json.streams && json.streams.length) {
+    callback(json);
+};
         });
       }
     }
 
+    setTimeout(function(){
+    reguest(params, callback);
+}, 2000);
+    
     function subscribeTracks(data) {
       var inited = false;
       var inited_parse = false;
