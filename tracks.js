@@ -29,10 +29,6 @@
         });
       }
     }
-
-    setTimeout(function(){
-    reguest(params, callback);
-}, 2000);
     
     function subscribeTracks(data) {
       var inited = false;
