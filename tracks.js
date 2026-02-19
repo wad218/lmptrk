@@ -6,29 +6,60 @@
     var metainfo_rendered = false;
 
     function reguest(params, callback) {
-      if (params.ffprobe && params.path.split('.').pop() !== 'mp4') {
-        setTimeout(function () {
-          callback({
-            streams: params.ffprobe
-          });
-        }, 200);
-      } else {
-        if (connect_host == '{localhost}') connect_host = '185.204.0.61';
-        var socket = new WebSocket('ws://' + connect_host + ':8080/?' + params.torrent_hash + '&index=' + params.id);
-        socket.addEventListener('message', function (event) {
-          socket.close();
-          var json = {};
+  if (params.ffprobe && params.path.split('.').pop() !== 'mp4') {
+    setTimeout(function () {
+      callback({
+        streams: params.ffprobe
+      });
+    }, 200);
+  } else {
 
-          try {
-            json = JSON.parse(event.data);
-          } catch (e) {}
+    if (connect_host == '{localhost}')
+        connect_host = '185.204.0.61';
 
-          if (json.streams && json.streams.length) {
-    callback(json);
-};
-        });
-      }
+    var attempts = 0;
+    var maxAttempts = 5;
+
+    function tryRequest() {
+
+      var socket = new WebSocket(
+        'ws://' + connect_host + ':8080/?' +
+        params.torrent_hash + '&index=' + params.id
+      );
+
+      socket.addEventListener('message', function (event) {
+
+        socket.close();
+
+        var json = {};
+        try {
+          json = JSON.parse(event.data);
+        } catch (e) {}
+
+        if (json.streams && json.streams.length) {
+          callback(json);
+        } else {
+          if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(tryRequest, 1500);
+          }
+        }
+      });
+
+      socket.addEventListener('error', function () {
+        socket.close();
+
+        if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(tryRequest, 1500);
+        }
+      });
+
     }
+
+    tryRequest();
+  }
+}
     
     function subscribeTracks(data) {
       var inited = false;
