@@ -1,4 +1,4 @@
-function () {
+(function () {
     'use strict';
 
     var apiBase = 'https://api.shotstack.io/v1/probe/';
