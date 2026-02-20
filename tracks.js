@@ -347,7 +347,7 @@
             var line = {};
             if (v.width && v.height) line.video = v.width + 'х' + v.height;
               
-// ===== FPS START =====
+// ===== CINEMA FPS NORMALIZE =====
 var fps = null;
 
 function parseRate(rate) {
@@ -361,23 +361,31 @@ function parseRate(rate) {
     return parseFloat(rate);
 }
 
-// 1️⃣ пробуємо стандартний спосіб
+// 1️⃣ стандартний спосіб
 fps = parseRate(v.avg_frame_rate) || parseRate(v.r_frame_rate);
 
-// 2️⃣ якщо нема — рахуємо через nb_frames
+// 2️⃣ якщо нема — рахуємо через кадри
 if (!fps && v.nb_frames && v.duration) {
     fps = parseFloat(v.nb_frames) / parseFloat(v.duration);
 }
 
 if (fps && fps > 0) {
-    var fpsRounded = Math.round(fps * 1000) / 1000;
-    fpsRounded = fpsRounded.toString()
-        .replace(/\.0+$/, '')
-        .replace(/(\.\d*[1-9])0+$/, '$1');
 
-    line.fps = fpsRounded + ' fps';
+    var cinema = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60];
+    var normalized = fps;
+
+    cinema.forEach(function(val){
+        if (Math.abs(fps - val) < 0.2) {
+            normalized = Math.round(val);
+        }
+    });
+
+    // якщо не попав у стандарт — просто округляємо
+    normalized = Math.round(normalized);
+
+    line.fps = normalized + ' fps';
 }
-// ===== FPS END =====
+// ===== END =====
               
             if (v.duration) {
               line.duration = new Date(v.duration * 1000).toISOString().slice(11, 19);
