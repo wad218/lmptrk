@@ -6,55 +6,30 @@
     var metainfo_rendered = false;
 
     function reguest(params, callback) {
-  if (params.ffprobe && params.path.split('.').pop() !== 'mp4') {
-    setTimeout(function () {
-      callback({
-        streams: params.ffprobe
-      });
-    }, 200);
-  } else {
 
-    var attempts = 0;
-    var maxAttempts = 10;
+  if (!params.torrent_hash) return;
 
-    function tryRequest() {
+  var url = 'http://' + connect_host + '/probe?hash=' 
+            + params.torrent_hash + '&index=' + params.id;
 
-      var socket = new WebSocket(
-  'ws://' + connect_host + '/?hash=' + params.torrent_hash + '&index=' + params.id
-);
+  var net = new Lampa.Reguest();
+  net.timeout(15000);
 
-      socket.addEventListener('message', function (event) {
+  net.native(url, function (str) {
 
-        socket.close();
+    var json = {};
 
-        var json = {};
-        try {
-          json = JSON.parse(event.data);
-        } catch (e) {}
+    try {
+      json = JSON.parse(str);
+    } catch (e) {}
 
-        if (json.streams && json.streams.length) {
-          callback(json);
-        } else {
-          if (attempts < maxAttempts && list_opened) {
-            attempts++;
-            setTimeout(tryRequest, 2000);
-          }
-        }
-      });
-
-      socket.addEventListener('error', function () {
-        socket.close();
-
-        if (attempts < maxAttempts && list_opened) {
-          attempts++;
-          setTimeout(tryRequest, 2000);
-        }
-      });
-
+    if (json.streams && json.streams.length) {
+      callback(json);
     }
 
-    tryRequest();
-  }
+  }, false, false, {
+    dataType: 'text'
+  });
 }
     
     function subscribeTracks(data) {
