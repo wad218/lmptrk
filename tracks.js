@@ -6,39 +6,55 @@
     var metainfo_rendered = false;
 
     function reguest(params, callback) {
+  if (params.ffprobe && params.path.split('.').pop() !== 'mp4') {
+    setTimeout(function () {
+      callback({
+        streams: params.ffprobe
+      });
+    }, 200);
+  } else {
 
-  if (!params.torrent_hash) return;
+    var attempts = 0;
+    var maxAttempts = 10;
 
-  var url = 'http://' + connect_host + '/probe?hash=' 
-            + params.torrent_hash + '&index=' + params.id;
+    function tryRequest() {
 
-  var net = new Lampa.Reguest();
-  net.timeout(15000);
+      var socket = new WebSocket(
+  'ws://' + connect_host + '/?hash=' + params.torrent_hash + '&index=' + params.id
+);
 
-  net.native(url, function (str) {
+      socket.addEventListener('message', function (event) {
 
-    var json = {};
+        socket.close();
 
-    try {
-      json = JSON.parse(str);
-    } catch (e) {}
+        var json = {};
+        try {
+          json = JSON.parse(event.data);
+        } catch (e) {}
 
-    // 🔥 Ось ключове виправлення
-    var meta = null;
+        if (json.streams && json.streams.length) {
+          callback(json);
+        } else {
+          if (attempts < maxAttempts && list_opened) {
+            attempts++;
+            setTimeout(tryRequest, 2000);
+          }
+        }
+      });
 
-    if (json.response && json.response.metadata) {
-        meta = json.response.metadata;
-    } else if (json.streams) {
-        meta = json;
+      socket.addEventListener('error', function () {
+        socket.close();
+
+        if (attempts < maxAttempts && list_opened) {
+          attempts++;
+          setTimeout(tryRequest, 2000);
+        }
+      });
+
     }
 
-    if (meta && meta.streams && meta.streams.length) {
-        callback(meta);
-    }
-
-  }, false, false, {
-    dataType: 'text'
-  });
+    tryRequest();
+  }
 }
     
     function subscribeTracks(data) {
