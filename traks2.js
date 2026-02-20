@@ -312,12 +312,44 @@
             return a.codec_type == 'subtitle';
           });
           codecVideo.slice(0, 1).forEach(function (v) {
-            var line = {};
-            if (v.width && v.height) line.video = v.width + 'x' + v.height;
-            if (v.codec_name) line.codec = v.codec_name.toUpperCase();
-            if (Boolean(v.is_avc)) line.avc = 'AVC';
-            if (Lampa.Arrays.getKeys(line).length) video.push(line);
-          });
+    var line = {};
+
+    // Роздільна здатність
+    if (v.width && v.height) {
+        line.video = v.width + 'x' + v.height;
+    }
+
+    // Кодек
+    if (v.codec_name) {
+        line.codec = v.codec_name.toUpperCase();
+    }
+
+    // FPS
+    if (v.avg_frame_rate && v.avg_frame_rate !== "0/0") {
+        var fpsParts = v.avg_frame_rate.split('/');
+        if (fpsParts.length === 2 && Number(fpsParts[1]) !== 0) {
+            var fps = Number(fpsParts[0]) / Number(fpsParts[1]);
+            line.fps = fps.toFixed(3) + ' FPS';
+        }
+    }
+
+    // Бітрейт
+    var bit = v.bit_rate ? v.bit_rate :
+        (v.tags && (v.tags.BPS || v.tags["BPS-eng"])) ?
+        (v.tags.BPS || v.tags["BPS-eng"]) : null;
+
+    if (bit) {
+        line.rate = Math.round(bit / 1000000) + ' Mbps';
+    }
+
+    if (Boolean(v.is_avc)) {
+        line.avc = 'AVC';
+    }
+
+    if (Lampa.Arrays.getKeys(line).length) {
+        video.push(line);
+    }
+});
           codecAudio.forEach(function (a, i) {
             var line = {
               num: i + 1
