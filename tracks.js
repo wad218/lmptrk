@@ -23,8 +23,17 @@
       json = JSON.parse(str);
     } catch (e) {}
 
-    if (json.streams && json.streams.length) {
-      callback(json);
+    // 🔥 Ось ключове виправлення
+    var meta = null;
+
+    if (json.response && json.response.metadata) {
+        meta = json.response.metadata;
+    } else if (json.streams) {
+        meta = json;
+    }
+
+    if (meta && meta.streams && meta.streams.length) {
+        callback(meta);
     }
 
   }, false, false, {
