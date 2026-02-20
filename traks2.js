@@ -7,48 +7,6 @@
 
     function reguest(params, callback) {
 
-  // ===== 1️⃣ СПРОБА через TorrServer =====
-
-  if (params.torrent_hash) {
-
-    var url = 'http://' + connect_host + '/probe?hash=' 
-              + params.torrent_hash + '&index=' + params.id;
-
-    var net = new Lampa.Reguest();
-    net.timeout(10000);
-
-    net.native(url, function (str) {
-
-      var json = {};
-
-      try {
-        json = JSON.parse(str);
-      } catch (e) {}
-
-      var meta = null;
-
-      if (json.response && json.response.metadata) {
-        meta = json.response.metadata;
-      } else if (json.streams) {
-        meta = json;
-      }
-
-      // якщо є streams — повертаємо
-      if (meta && meta.streams && meta.streams.length) {
-        callback(meta);
-        return;
-      }
-
-      // якщо нема — пробуємо fallback
-      fallbackByUrl();
-
-    }, false, false, { dataType: 'text' });
-
-  } else {
-    fallbackByUrl();
-  }
-
-
   // ===== 2️⃣ Fallback через прямий URL =====
 
   function fallbackByUrl() {
