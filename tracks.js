@@ -15,7 +15,7 @@
   } else {
 
     var attempts = 0;
-    var maxAttempts = 5;
+    var maxAttempts = 10;
 
     function tryRequest() {
 
@@ -35,9 +35,9 @@
         if (json.streams && json.streams.length) {
           callback(json);
         } else {
-          if (attempts < maxAttempts) {
+          if (attempts < maxAttempts && list_opened) {
             attempts++;
-            setTimeout(tryRequest, 1500);
+            setTimeout(tryRequest, 2000);
           }
         }
       });
@@ -45,9 +45,9 @@
       socket.addEventListener('error', function () {
         socket.close();
 
-        if (attempts < maxAttempts) {
+        if (attempts < maxAttempts && list_opened) {
           attempts++;
-          setTimeout(tryRequest, 1500);
+          setTimeout(tryRequest, 2000);
         }
       });
 
