@@ -14,13 +14,19 @@
         
         $.getJSON(url, function(data) {
             var ratings = {};
+            // План А: Беремо рейтинги кожної серії
             if (data && data.Episodes) {
                 data.Episodes.forEach(function(ep) {
-                    if (ep.Episode && ep.imdbRating && ep.imdbRating !== 'N/A') {
-                        ratings[ep.Episode] = ep.imdbRating;
+                    var epNum = parseInt(ep.Episode);
+                    if (!isNaN(epNum) && ep.imdbRating && ep.imdbRating !== 'N/A') {
+                        ratings[epNum] = ep.imdbRating;
                     }
                 });
             }
+            
+            // План Б: Якщо для серій порожньо, можемо вивести рейтинг сезону/серіалу (опціонально)
+            // Але краще залишити як є, щоб не дезінформувати.
+            
             seasonCache[cacheKey] = ratings;
             callback(ratings);
         });
