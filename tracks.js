@@ -2,12 +2,27 @@
     'use strict';
 
     var apiBase = 'https://api.shotstack.io/v1/probe/';
+    var omdbApiKey = '7d0a0115'; // Замініть на свій ключ
+var omdbCache = {};
     var cache = {};
     var cacheTtlMs = 1000 * 60 * 10;
     var listOpened = false;
     var listProbeRequested = false;
     function log() {
     }
+    function getOmdbRating(title, season, episode, callback) {
+    var cacheKey = title + season + episode;
+    if (omdbCache[cacheKey]) return callback(omdbCache[cacheKey]);
+
+    // Спроба знайти за назвою серіалу, сезоном та серією
+    var url = 'https://www.omdbapi.com/?apikey=' + omdbApiKey + '&t=' + encodeURIComponent(title) + '&Season=' + season + '&Episode=' + episode;
+    
+    $.getJSON(url, function(data) {
+        var rating = data && data.imdbRating ? data.imdbRating : 'N/A';
+        omdbCache[cacheKey] = rating;
+        callback(rating);
+    });
+}
     function stopAutostart() {
       if (typeof Lampa !== 'undefined' && Lampa.Keypad && Lampa.Keypad.listener) {
         Lampa.Keypad.listener.send('keydown', {
@@ -314,6 +329,29 @@
           codecVideo.slice(0, 1).forEach(function (v) {
     var line = {};
 
+              // Додаємо рейтинг IMDb
+    // Нам потрібно отримати назву та номери з об'єкта data, який передає Lampa
+    var card = Lampa.Player.data() || {};
+    var title = card.movie ? card.movie.title : '';
+    
+    // Спробуємо дістати сезон/серію з елемента списку
+    var season = data.element.season;
+    var episode = data.element.episode;
+
+    if (title && season && episode) {
+        getOmdbRating(title, season, episode, function(rating) {
+            if (rating !== 'N/A') {
+                // Знаходимо доданий елемент в DOM та вставляємо рейтинг
+                $('.tracks-metainfo__column--imdb').text('IMDb: ' + rating);
+            }
+        });
+        line.imdb = '...'; // Плейсхолдер під час завантаження
+    }
+
+    if (Lampa.Arrays.getKeys(line).length) {
+        video.push(line);
+    }
+});
     // Роздільна здатність
     if (v.width && v.height) {
         line.video = v.width + 'x' + v.height;
@@ -413,12 +451,15 @@
     }
 
     function addTemplates() {
-      Lampa.Template.add('tracks_loading', "\n        <div class=\"tracks-loading\">\n            <span>#{loading}...</span>\n        </div>\n    ");
-      Lampa.Template.add('tracks_metainfo', "\n        <div class=\"tracks-metainfo\"></div>\n    ");
-      Lampa.Template.add('tracks_metainfo_block', "\n        <div class=\"tracks-metainfo__line\">\n            <div class=\"tracks-metainfo__label\"></div>\n            <div class=\"tracks-metainfo__info\"></div>\n        </div>\n    ");
-      Lampa.Template.add('tracks_css', "\n        <style>\n        .tracks-loading{margin-top:1em;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-box-align:start;-webkit-align-items:flex-start;-ms-flex-align:start;align-items:flex-start}.tracks-loading:before{content:'';display:inline-block;width:1.3em;height:1.3em;background:url('./img/loader.svg') no-repeat 50% 50%;background-size:contain;margin-right:.4em}.tracks-loading>span{font-size:1.1em;line-height:1.1}.tracks-metainfo{margin-top:1em}.tracks-metainfo__line+.tracks-metainfo__line{margin-top:2em}.tracks-metainfo__label{opacity:.5;font-weight:600}.tracks-metainfo__info{padding-top:1em;line-height:1.2}.tracks-metainfo__info>div{background-color:rgba(0,0,0,0.22);display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-border-radius:.3em;border-radius:.3em;-webkit-flex-wrap:wrap;-ms-flex-wrap:wrap;flex-wrap:wrap}.tracks-metainfo__info>div.focus{background-color:rgba(255,255,255,0.06)}.tracks-metainfo__info>div>div{padding:1em;-webkit-flex-shrink:0;-ms-flex-negative:0;flex-shrink:0}.tracks-metainfo__info>div>div:not(:last-child){padding-right:1.5em}.tracks-metainfo__info>div+div{margin-top:1em}.tracks-metainfo__column--video,.tracks-metainfo__column--name{margin-right:auto}.tracks-metainfo__column--num{min-width:3em;padding-right:0}.tracks-metainfo__column--rate{min-width:7em;text-align:right}.tracks-metainfo__column--channels{min-width:5em;text-align:right}\n        </style>\n    ");
-      $('body').append(Lampa.Template.get('tracks_css', {}, true));
-    }
+  Lampa.Template.add('tracks_loading', "\n        <div class=\"tracks-loading\">\n            <span>#{loading}...</span>\n        </div>\n    ");
+  Lampa.Template.add('tracks_metainfo', "\n        <div class=\"tracks-metainfo\"></div>\n    ");
+  Lampa.Template.add('tracks_metainfo_block', "\n        <div class=\"tracks-metainfo__line\">\n            <div class=\"tracks-metainfo__label\"></div>\n            <div class=\"tracks-metainfo__info\"></div>\n        </div>\n    ");
+  
+  // Оновлений блок стилів
+  Lampa.Template.add('tracks_css', "\n        <style>\n        .tracks-loading{margin-top:1em;display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-box-align:start;-webkit-align-items:flex-start;-ms-flex-align:start;align-items:flex-start}.tracks-loading:before{content:'';display:inline-block;width:1.3em;height:1.3em;background:url('./img/loader.svg') no-repeat 50% 50%;background-size:contain;margin-right:.4em}.tracks-loading>span{font-size:1.1em;line-height:1.1}.tracks-metainfo{margin-top:1em}.tracks-metainfo__line+.tracks-metainfo__line{margin-top:2em}.tracks-metainfo__label{opacity:.5;font-weight:600}.tracks-metainfo__info{padding-top:1em;line-height:1.2}.tracks-metainfo__info>div{background-color:rgba(0,0,0,0.22);display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;-webkit-border-radius:.3em;border-radius:.3em;-webkit-flex-wrap:wrap;-ms-flex-wrap:wrap;flex-wrap:wrap}.tracks-metainfo__info>div.focus{background-color:rgba(255,255,255,0.06)}.tracks-metainfo__info>div>div{padding:1em;-webkit-flex-shrink:0;-ms-flex-negative:0;flex-shrink:0}.tracks-metainfo__info>div>div:not(:last-child){padding-right:1.5em}.tracks-metainfo__info>div+div{margin-top:1em}.tracks-metainfo__column--video,.tracks-metainfo__column--name{margin-right:auto}.tracks-metainfo__column--num{min-width:3em;padding-right:0}.tracks-metainfo__column--rate{min-width:7em;text-align:right}.tracks-metainfo__column--channels{min-width:5em;text-align:right}\n        \n        /* НОВИЙ СТИЛЬ ДЛЯ IMDB */\n        .tracks-metainfo__column--imdb{color:#f5c518;font-weight:bold;min-width:5em;text-align:right}\n        </style>\n    ");
+  
+  $('body').append(Lampa.Template.get('tracks_css', {}, true));
+}
 
     var manifest = {
       type: "other",
