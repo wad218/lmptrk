@@ -238,24 +238,42 @@
                 codecVideo.slice(0, 1).forEach(function (v) {
                     var line = {};
                     
-                    // 1. Отримуємо рейтинг IMDb (Асинхронно)
-                    var card = Lampa.Player.data() || {};
-                    var title = card.movie ? card.movie.title : '';
+                    // БЕЗПЕЧНЕ ОТРИМАННЯ НАЗВИ
+                    var title = '';
+                    try {
+                        // Спершу пробуємо отримати з об'єкта Lampa.Component
+                        var current_card = Lampa.Activity.active().card;
+                        title = current_card ? (current_card.title || current_card.name) : '';
+                        
+                        // Якщо не вийшло, шукаємо в заголовку інтерфейсу
+                        if (!title) {
+                            title = $('.full-start__title, .torrent-edit__title').text();
+                        }
+                    } catch (e) {
+                        console.log('Tracks Probe: Error getting title', e);
+                    }
+
+                    // Очищення назви (прибираємо рік та технічну інфу)
+                    if (title) {
+                        title = title.split(/[(\[sS\d{1,2}[eE]/)[0].trim();
+                    }
+
                     var season = data.element.season;
                     var episode = data.element.episode;
 
-                    if (title && season && episode) {
+                    // Запит до OMDb
+                    if (title && season !== undefined && episode !== undefined) {
                         line.imdb = 'IMDb: ...'; 
                         getOmdbRating(title, season, episode, function(rating) {
                             if (rating !== 'N/A') {
                                 $('.tracks-metainfo__column--imdb').text('IMDb: ' + rating);
                             } else {
-                                $('.tracks-metainfo__column--imdb').text('');
+                                $('.tracks-metainfo__column--imdb').text('IMDb: N/A');
                             }
                         });
                     }
 
-                    // 2. Інші тех. дані
+                    // Решта технічних параметрів відео
                     if (v.width && v.height) line.video = v.width + 'x' + v.height;
                     if (v.codec_name) line.codec = v.codec_name.toUpperCase();
                     if (v.avg_frame_rate && v.avg_frame_rate !== "0/0") {
@@ -266,8 +284,7 @@
                     }
                     var bit = v.bit_rate || (v.tags && (v.tags.BPS || v.tags["BPS-eng"]));
                     if (bit) line.rate = Math.round(bit / 1000000) + ' Mbps';
-                    if (v.is_avc) line.avc = 'AVC';
-
+                    
                     video.push(line);
                 });
 
